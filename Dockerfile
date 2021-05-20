@@ -18,6 +18,7 @@ RUN apk add --no-cache gcc make alpine-sdk openssl-dev libressl-dev build-base #
 RUN curl -LO https://github.com/redis/redis/archive/refs/tags/6.2.3.zip && unzip 6.2.3.zip 
 RUN cd redis-6.2.3/deps && make BUILD_TLS=yes hiredis lua jemalloc linenoise
 RUN cd redis-6.2.3 && make BUILD_TLS=yes redis-cli
+RUN cp redis-6.2.3/src/redis-cli /usr/bin/
 RUN rm -Rf redis-6.2.3/ 6.2.3.zip
 
 
@@ -37,7 +38,7 @@ RUN	cd netperf-netperf-2.7.0 && ./configure --prefix=/usr --enable-histogram \
 
 RUN cd netperf-netperf-2.7.0 && make 
 RUN cd netperf-netperf-2.7.0 && make install
-RUN	rm -rf netperf-2.7.0 netperf-2.7.0.tar.gz && \
+RUN	rm -rf netperf-netperf-2.7.0 netperf-2.7.0.tar.gz && \
 	rm -f /usr/share/info/netperf.info && \
 	strip -s /usr/bin/netperf /usr/bin/netserver && \
 	apk del build-base && rm -rf /var/cache/apk/*
