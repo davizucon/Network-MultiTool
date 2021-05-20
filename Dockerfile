@@ -1,4 +1,5 @@
-FROM alpine
+FROM alpine:3.12
+#FROM alpine
 MAINTAINER Kamran Azeem & Henrik Høegh (kaz@praqma.net, heh@praqma.net)
 
 # Install some tools in the container.
@@ -7,19 +8,41 @@ RUN     apk update \
     &&  apk add apache2-utils bash bind-tools busybox-extras curl ethtool git iperf\
                 iperf3 iproute2 iputils jq lftp mtr mysql-client \
                 netcat-openbsd net-tools nginx nmap openssh-client openssl \
-	        perl-net-telnet postgresql-client procps rsync socat tcpdump tshark wget kafkacat redis\
+	        perl-net-telnet postgresql-client procps rsync socat tcpdump tshark wget kafkacat stunnel\
     &&  mkdir /certs \
     &&  chmod 700 /certs
 
+
+RUN apk add --no-cache gcc make alpine-sdk openssl-dev libressl-dev build-base #linux-headers lksctp-tools-dev lksctp-tools
+
+RUN curl -LO https://github.com/redis/redis/archive/refs/tags/6.2.3.zip && unzip 6.2.3.zip 
+RUN cd redis-6.2.3/deps && make BUILD_TLS=yes hiredis lua jemalloc linenoise
+RUN cd redis-6.2.3 && make BUILD_TLS=yes redis-cli
+RUN rm -Rf redis-6.2.3/ 6.2.3.zip
+
+
 ## netperf
-RUN apk add --update curl build-base bash && \
-	curl -LO https://github.com/HewlettPackard/netperf/archive/netperf-2.7.0.tar.gz && \
-	tar -xzf netperf-2.7.0.tar.gz  && \
-	cd netperf-netperf-2.7.0 && ./configure --prefix=/usr && make && make install && \
-	rm -rf netperf-2.7.0 netperf-2.7.0.tar.gz && \
+RUN	curl -LO https://github.com/HewlettPackard/netperf/archive/netperf-2.7.0.tar.gz && \
+	tar -xzf netperf-2.7.0.tar.gz 
+RUN	cd netperf-netperf-2.7.0 && ./configure --prefix=/usr --enable-histogram \
+        --enable-unixdomain \
+        --enable-dccp \
+        --enable-omni \
+        --enable-exs \
+        --enable-sctp \
+        --enable-intervals \
+        --enable-spin \
+        --enable-burst \
+        --enable-cpuutil=procstat
+
+RUN cd netperf-netperf-2.7.0 && make 
+RUN cd netperf-netperf-2.7.0 && make install
+RUN	rm -rf netperf-2.7.0 netperf-2.7.0.tar.gz && \
 	rm -f /usr/share/info/netperf.info && \
 	strip -s /usr/bin/netperf /usr/bin/netserver && \
 	apk del build-base && rm -rf /var/cache/apk/*
+
+
 
 
 # Interesting:
